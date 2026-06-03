@@ -47,7 +47,7 @@
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPai" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownPai">';
                     echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Alunos</a></li>';
-                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Adicionar criança</a></li>';
+                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Inscrever Aluno</a></li>';
                     echo '</ul>';
                     echo '</li>';
                 }
