@@ -67,7 +67,7 @@ $enc_id = $enc['id'];
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPai" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownPai">';
                     echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Alunos</a></li>';
-                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Inscrever Alunos</a></li>';
+                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Inscrever criança</a></li>';
                     echo '</ul>';
                     echo '</li>';
                 }
@@ -114,7 +114,7 @@ if (isset($_SESSION['info'])) {
 <div class="card shadow-sm p-4" style="background:#C5C6D0;border:none;">
 <div class="card-body">
 
-<h1 class="text-center mb-4">   Inscrever Alunos</h1>
+<h1 class="text-center mb-4">   Inscrever criança</h1>
 
 <form action="load_criar_perfil.php" method="POST">
 
@@ -143,7 +143,7 @@ if (isset($_SESSION['info'])) {
             Cancelar
         </a>
         <button type="submit" class="btn btn-success fw-bold">
-            Inscrever Aluno
+            Inscrever criança
         </button>
     </div>
 
