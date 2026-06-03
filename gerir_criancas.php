@@ -254,7 +254,7 @@ $totalPaginas = ceil($total / $limite);
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPai" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownPai">';
                     echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Crianças</a></li>';
-                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Adicionar Criança</a></li>';
+                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Inscrever criança</a></li>';
                     echo '</ul>';
                     echo '</li>';
                 }
@@ -319,6 +319,7 @@ $totalPaginas = ceil($total / $limite);
             <th>Alterar</th>
             <th>Atividades</th>
             <th>Inscrever</th>
+            <th>Desinscrever</th>
             <th>Presenças</th>
         </tr>
 
@@ -351,6 +352,13 @@ $totalPaginas = ceil($total / $limite);
                     <a href="inscrever.php?id=<?php echo htmlspecialchars($aluno['id']); ?>&voltar=<?php echo urlencode($voltar); ?>"
                        class="btn btn-success btn-sm">
                         Inscrever
+                    </a>
+                </td>
+
+                <td>
+                    <a href="desinscrever.php?id_crianca=<?php echo htmlspecialchars($aluno['id']); ?>&voltar=<?php echo urlencode($voltar); ?>"
+                       class="btn btn-danger btn-sm">
+                        Desinscrever
                     </a>
                 </td>
 
