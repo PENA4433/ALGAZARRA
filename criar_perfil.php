@@ -143,7 +143,7 @@ if (isset($_SESSION['info'])) {
             Cancelar
         </a>
         <button type="submit" class="btn btn-success fw-bold">
-            Inscrever criança
+            Inscrever Aluno
         </button>
     </div>
 
