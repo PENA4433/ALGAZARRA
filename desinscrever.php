@@ -2,37 +2,173 @@
 session_start();
 include './basedados.h';
 
-if (!isset($_SESSION['id_user'])) {
-    header("Location: login.php");
-    exit();
+if (!isset($_SESSION['id_user'], $_SESSION['nivel'])) {
+    include './erro.php';
+    exit;
 }
 
-if (!isset($_GET['id_crianca'])) {
-    header("Location: gerir_criancas.php");
-    exit();
+/* validar aluno */
+$id_user = intval($_SESSION['id_user']);
+$nivel = intval($_SESSION['nivel']);
+
+if (isset($_GET['id']) && ctype_digit($_GET['id'])) {
+    $id_crianca = (int) $_GET['id'];
+} elseif (isset($_POST['id_crianca']) && ctype_digit($_POST['id_crianca'])) {
+    $id_crianca = (int) $_POST['id_crianca'];
+} else {
+    die("Aluno inválido");
 }
 
-$id_crianca = intval($_GET['id_crianca']);
+$voltar = isset($_GET['voltar']) ? $_GET['voltar'] : 'gerir_criancas.php';
 
-// Buscar dados da criança
-$sql_crianca = "SELECT nome FROM aluno WHERE id_aluno = $id_crianca";
-$resultado_crianca = mysqli_query($conn, $sql_crianca);
-
-if (!$resultado_crianca || mysqli_num_rows($resultado_crianca) == 0) {
-    header("Location: gerir_criancas.php");
-    exit();
+function redirecionarComErro($mensagem, $destino) {
+    $_SESSION['err'] = $mensagem;
+    header("Location: $destino");
+    exit;
 }
 
-$crianca = mysqli_fetch_assoc($resultado_crianca);
+function redirecionarComInfo($mensagem, $destino) {
+    $_SESSION['info'] = $mensagem;
+    header("Location: $destino");
+    exit;
+}
 
-// Buscar atividades onde a criança está inscrita
-$sql = "SELECT atividade.id_atividade, atividade.nome
-        FROM atividade
-        INNER JOIN inscricao 
-        ON atividade.id_atividade = inscricao.id_atividade
-        WHERE inscricao.id_aluno = $id_crianca";
+/*
+ * Os professores podem desinscrever qualquer criança.
+ * Os encarregados de educação só podem desinscrever crianças associadas ao seu próprio perfil.
+ */
+if ($nivel == 2) {
 
-$resultado = mysqli_query($conn, $sql);
+    $stmt_enc = mysqli_prepare($conn, "
+        SELECT id 
+        FROM enc_educacao 
+        WHERE email = (
+            SELECT email 
+            FROM utilizador 
+            WHERE id = ?
+        )
+    ");
+
+    mysqli_stmt_bind_param($stmt_enc, "i", $id_user);
+    mysqli_stmt_execute($stmt_enc);
+    $res_enc = mysqli_stmt_get_result($stmt_enc);
+    mysqli_stmt_close($stmt_enc);
+
+    if (!$res_enc || mysqli_num_rows($res_enc) == 0) {
+        redirecionarComErro('Encarregado não encontrado na base de dados.', 'erro.php');
+    }
+
+    $enc_data = mysqli_fetch_assoc($res_enc);
+    $enc_id = intval($enc_data['id']);
+
+    $stmt_aluno = mysqli_prepare($conn, "
+        SELECT id, nome 
+        FROM aluno 
+        WHERE id = ? 
+        AND enc_educacao = ?
+    ");
+
+    mysqli_stmt_bind_param($stmt_aluno, "ii", $id_crianca, $enc_id);
+    mysqli_stmt_execute($stmt_aluno);
+    $res_aluno = mysqli_stmt_get_result($stmt_aluno);
+    mysqli_stmt_close($stmt_aluno);
+
+    if (!$res_aluno || mysqli_num_rows($res_aluno) == 0) {
+        redirecionarComErro('Não tem permissão para desinscrever esta criança.', 'gerir_criancas.php');
+    }
+
+    $aluno_atual = mysqli_fetch_assoc($res_aluno);
+
+} elseif ($nivel == 1) {
+
+    $stmt_aluno = mysqli_prepare($conn, "
+        SELECT id, nome 
+        FROM aluno 
+        WHERE id = ?
+    ");
+
+    mysqli_stmt_bind_param($stmt_aluno, "i", $id_crianca);
+    mysqli_stmt_execute($stmt_aluno);
+    $res_aluno = mysqli_stmt_get_result($stmt_aluno);
+    mysqli_stmt_close($stmt_aluno);
+
+    if (!$res_aluno || mysqli_num_rows($res_aluno) == 0) {
+        redirecionarComErro('Criança não encontrada.', 'gerir_criancas.php');
+    }
+
+    $aluno_atual = mysqli_fetch_assoc($res_aluno);
+
+} else {
+    redirecionarComErro('Acesso negado.', 'index.php');
+}
+
+/* se clicar em desinscrever */
+if (isset($_POST['id_atividade']) && ctype_digit($_POST['id_atividade'])) {
+
+    $id_atividade = (int) $_POST['id_atividade'];
+
+    /* verificar se a inscrição existe */
+    $stmt_check = mysqli_prepare($conn, "
+        SELECT aluno 
+        FROM inscricao 
+        WHERE aluno = ? 
+        AND atividade = ? 
+        LIMIT 1
+    ");
+
+    mysqli_stmt_bind_param($stmt_check, "ii", $id_crianca, $id_atividade);
+    mysqli_stmt_execute($stmt_check);
+    $res_check = mysqli_stmt_get_result($stmt_check);
+    mysqli_stmt_close($stmt_check);
+
+    if (!$res_check || mysqli_num_rows($res_check) == 0) {
+        redirecionarComErro(
+            'Esta criança não está inscrita nesta atividade.',
+            "desinscrever.php?id=$id_crianca&voltar=" . urlencode($voltar)
+        );
+    }
+
+    /* apagar todos os registos dessa criança nessa atividade */
+    $stmt_delete = mysqli_prepare($conn, "
+        DELETE FROM inscricao 
+        WHERE aluno = ? 
+        AND atividade = ?
+    ");
+
+    mysqli_stmt_bind_param($stmt_delete, "ii", $id_crianca, $id_atividade);
+
+    if (!mysqli_stmt_execute($stmt_delete)) {
+        mysqli_stmt_close($stmt_delete);
+        redirecionarComErro(
+            'Não foi possível desinscrever a criança.',
+            "desinscrever.php?id=$id_crianca&voltar=" . urlencode($voltar)
+        );
+    }
+
+    mysqli_stmt_close($stmt_delete);
+
+    redirecionarComInfo('Criança desinscrita com sucesso.', "desinscrever.php?id=$id_crianca&voltar=" . urlencode($voltar));
+
+} elseif (isset($_POST['id_atividade'])) {
+    redirecionarComErro(
+        'Atividade inválida.',
+        "desinscrever.php?id=$id_crianca&voltar=" . urlencode($voltar)
+    );
+}
+
+/* listar apenas atividades onde a criança está inscrita */
+$stmt_atividades = mysqli_prepare($conn, "
+    SELECT DISTINCT a.id, a.titulo, a.data_inicio, a.data_fim
+    FROM atividade a
+    INNER JOIN inscricao i ON i.atividade = a.id
+    WHERE i.aluno = ?
+    ORDER BY a.data_inicio
+");
+
+mysqli_stmt_bind_param($stmt_atividades, "i", $id_crianca);
+mysqli_stmt_execute($stmt_atividades);
+$result = mysqli_stmt_get_result($stmt_atividades);
+mysqli_stmt_close($stmt_atividades);
 ?>
 
 <!DOCTYPE html>
@@ -44,96 +180,78 @@ $resultado = mysqli_query($conn, $sql);
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body style="background-color: #dfe7f2;">
+<body>
 
-<nav class="fixed-top navbar navbar-expand-lg" style="background-color: #00d0ff; border: none;" data-bs-theme="light">
-    <div class="container-fluid">
-        <div class="collapse navbar-collapse justify-content-center">
-            <ul class="navbar-nav mx-auto align-items-center justify-content-center">
-                <a class="navbar-brand" href="index.php">ALGAZARRA</a>
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="atividades.php">Atividades</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="contactos.php">Contactos</a>
-                </li>
-            </ul>
+<div class="container" style="padding:2vh; margin-top: 30px;">
 
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="logout.php">Sair</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="dados.php">Dados pessoais</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+    <h2 class="text-center">Escolher atividade para desinscrever</h2>
+    <h5 class="text-center text-muted">
+        Criança: <?php echo htmlspecialchars($aluno_atual['nome']); ?>
+    </h5>
 
-<div class="container" style="padding-top: 130px;">
-    <h1 class="text-center mb-4">Desinscrever Criança</h1>
+    <?php
+    if (isset($_SESSION['info'])) {
+        echo '<div class="alert alert-success mt-3">' . htmlspecialchars($_SESSION['info']) . '</div>';
+        unset($_SESSION['info']);
+    }
 
-    <h4 class="text-center mb-4">
-        Criança: <?php echo htmlspecialchars($crianca['nome']); ?>
-    </h4>
+    if (isset($_SESSION['err'])) {
+        echo '<div class="alert alert-danger mt-3">' . htmlspecialchars($_SESSION['err']) . '</div>';
+        unset($_SESSION['err']);
+    }
+    ?>
 
-    <div class="card mx-auto" style="max-width: 900px;">
-        <div class="card-body">
+    <?php if ($result && mysqli_num_rows($result) > 0) { ?>
 
-            <?php if ($resultado && mysqli_num_rows($resultado) > 0) { ?>
+        <?php while ($atividade = mysqli_fetch_assoc($result)) { ?>
 
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Atividade</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
+            <div class="card mt-3 p-3">
 
-                    <tbody>
-                        <?php while ($atividade = mysqli_fetch_assoc($resultado)) { ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($atividade['nome']); ?></td>
+                <h5><?php echo htmlspecialchars($atividade['titulo']); ?></h5>
 
-                                <td>
-                                    <a 
-                                        href="load_desinscrever.php?id_crianca=<?php echo $id_crianca; ?>&id_atividade=<?php echo $atividade['id_atividade']; ?>"
-                                        class="btn btn-danger"
-                                        onclick="return confirm('Tem a certeza que deseja desinscrever esta criança desta atividade?');"
-                                    >
-                                        Desinscrever
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php } ?>
-                    </tbody>
-                </table>
+                <p>
+                    De <?php echo date('d/m/Y', strtotime($atividade['data_inicio'])); ?>
+                    até <?php echo date('d/m/Y', strtotime($atividade['data_fim'])); ?>
+                </p>
 
-            <?php } else { ?>
+                <form method="post" onsubmit="return confirm('Tem a certeza que quer desinscrever esta criança desta atividade?');">
 
-                <div class="alert alert-warning text-center">
-                    Esta criança não está inscrita em nenhuma atividade.
-                </div>
+                    <input type="hidden" name="id_crianca"
+                           value="<?php echo htmlspecialchars($id_crianca); ?>">
 
-            <?php } ?>
+                    <input type="hidden" name="id_atividade"
+                           value="<?php echo htmlspecialchars($atividade['id']); ?>">
 
-            <div class="text-center mt-4">
-                <a href="gerir_criancas.php" class="btn btn-secondary">
-                    ← Voltar
-                </a>
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        Desinscrever desta atividade
+                    </button>
+
+                </form>
+
             </div>
 
+        <?php } ?>
+
+    <?php } else { ?>
+
+        <div class="alert alert-warning mt-3">
+            Esta criança não está inscrita em nenhuma atividade.
         </div>
+
+    <?php } ?>
+
+    <div class="mt-3">
+        <a href="<?php echo htmlspecialchars($voltar); ?>" class="btn btn-secondary">
+            Voltar
+        </a>
     </div>
+
 </div>
 
 <?php include './rodape.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js_check.js"></script>
 
 </body>
 </html>

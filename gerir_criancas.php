@@ -356,7 +356,7 @@ $totalPaginas = ceil($total / $limite);
                 </td>
 
                 <td>
-                    <a href="desinscrever.php?id_crianca=<?php echo htmlspecialchars($aluno['id']); ?>&voltar=<?php echo urlencode($voltar); ?>"
+                    <a href="desinscrever.php?id=<?php echo htmlspecialchars($aluno['id']); ?>&voltar=<?php echo urlencode($voltar); ?>"
                        class="btn btn-danger btn-sm">
                         Desinscrever
                     </a>
