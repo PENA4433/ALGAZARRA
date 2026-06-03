@@ -83,7 +83,11 @@ INSERT INTO atividade VALUES
 
 (3,'Jardim Zoológico de Lisboa',
 'Visita ao Jardim zoológico de Lisboa ...',
-'img/imagem2.png','2026-07-11','2026-07-15',50);
+'img/imagem2.png','2026-07-11','2026-07-15',50),
+
+(4,'Mini Torneio de Futebol',
+'Atividade de demonstração com limite máximo de 3 crianças inscritas.',
+'img/futebol.jpg','2026-07-16','2026-07-18',3);
 
 -- ========================
 -- TABELA: horario
@@ -122,12 +126,19 @@ INSERT INTO inscricao VALUES
 (1,1,'2026-04-01',1),
 (1,1,'2026-04-02',1),
 (1,1,'2026-04-03',0),
+
 (2,2,'2026-04-01',1),
 (2,2,'2026-04-02',0),
 (2,2,'2026-04-03',1),
+
 (3,3,'2026-04-04',1),
 (3,3,'2026-04-05',0),
-(3,3,'2026-04-06',1);
+(3,3,'2026-04-06',1),
+
+-- Atividade 4 já cheia: 3 alunos inscritos
+(1,4,'2026-07-16',0),
+(2,4,'2026-07-16',0),
+(3,4,'2026-07-16',0);
 
 -- ========================
 -- TABELA: utilizador
