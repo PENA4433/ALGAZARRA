@@ -33,16 +33,16 @@ CREATE TABLE IF NOT EXISTS aluno (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO aluno VALUES
-(1,'Sofia Almeida','2005-03-15',2),
-(2,'Pedro Carvalho','2002-11-08',1),
-(3,'Inês Ferreira','2006-07-22',3),
-(4,'Tiago Martins','2001-09-30',4),
-(5,'Beatriz Santos','2004-12-05',2),
-(6,'Rafael Costa','2003-01-19',5),
-(7,'Carolina Pinto','2005-06-10',3),
-(8,'Miguel Rocha','2002-08-27',1),
-(9,'Leonor Teixeira','2006-04-14',4),
-(10,'André Correia','2001-10-03',2);
+(1,'Sofia Almeida','2013-03-15',2),
+(2,'Pedro Carvalho','2014-11-08',1),
+(3,'Inês Ferreira','2014-07-22',3),
+(4,'Tiago Martins','2015-09-30',4),
+(5,'Beatriz Santos','2014-12-05',2),
+(6,'Rafael Costa','2011-01-19',5),
+(7,'Carolina Pinto','2013-06-10',3),
+(8,'Miguel Rocha','2016-08-27',1),
+(9,'Leonor Teixeira','2011-04-14',4),
+(10,'André Correia','2012-10-03',2);
 
 -- ========================
 -- TABELA: professor
