@@ -1,0 +1,161 @@
+<?php
+session_start();
+include './basedados.h';
+
+if (!isset($_SESSION['id_user']) || $_SESSION['nivel'] != 2) {
+    include './erro.php';
+    exit;
+}
+
+// Descobrir encarregado logado
+$id_user = intval($_SESSION['id_user']);
+
+$stmt_enc = mysqli_prepare($conn, "SELECT id FROM enc_educacao WHERE email = (SELECT email FROM utilizador WHERE id = ?)");
+mysqli_stmt_bind_param($stmt_enc, "i", $id_user);
+mysqli_stmt_execute($stmt_enc);
+$res_enc = mysqli_stmt_get_result($stmt_enc);
+mysqli_stmt_close($stmt_enc);
+
+if (!$res_enc || mysqli_num_rows($res_enc) == 0) {
+    $_SESSION['err'] = "Encarregado não encontrado na base de dados.";
+    header("Location: erro.php");
+    exit;
+}
+
+$enc = mysqli_fetch_assoc($res_enc);
+$enc_id = $enc['id'];
+?>
+    <meta charset="UTF-8">
+    <title>Algazarra - Criar Aluno</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<nav class="fixed-top navbar navbar-expand-lg" style="background-color: #00d0ff; border: none;" data-bs-theme="light">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-center" id="navbarColor01">
+            <ul class="navbar-nav mx-auto align-items-center justify-content-center">
+                <a class="navbar-brand" href="index.php">ALGAZARRA</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="index.php">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="atividades.php">Atividades</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="contactos.php">Contactos</a>
+                </li>
+                <?php
+                // Administrador
+                if (isset($_SESSION['id_user']) && $_SESSION['nivel'] == 1) {
+                    echo '<li class="nav-item dropdown">';
+                    echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
+                    echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">';
+                    echo '<li><a class="dropdown-item" href="gerir_utilizadores.php">Gerir utilizadores</a></li>';
+                    echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Alunos</a></li>';
+                    echo '<li><a class="dropdown-item" href="gerir_atividades.php">Gerir atividades</a></li>';
+                    echo '<li><a class="dropdown-item" href="criar_atividade.php">Criar atividade</a></li>';
+                    echo '</ul>';
+                    echo '</li>';
+                }
+                // Pai
+                if (isset($_SESSION['id_user']) && $_SESSION['nivel'] == 2) {
+                    echo '<li class="nav-item dropdown">';
+                    echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPai" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
+                    echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownPai">';
+                    echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Alunos</a></li>';
+                    echo '<li><a class="dropdown-item" href="criar_perfil.php">Adicionar Alunos</a></li>';
+                    echo '</ul>';
+                    echo '</li>';
+                }
+                ?>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <?php
+                if (isset($_SESSION['id_user']) && isset($_SESSION['nivel'])) {
+                    echo '<li class="nav-item"><a class="nav-link" href="logout.php">Sair</a></li>';
+                }
+                echo '<li class="nav-item">';
+                if (isset($_SESSION['id_user']) && isset($_SESSION['nivel'])) {
+                    echo '<a class="nav-link" href="dados.php">Dados pessoais</a>';
+                } else {
+                    echo '<a class="nav-link" href="login.php">Login</a>';
+                }
+                ?>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container" style="padding:2vh; margin-top: 80px;">
+
+<?php
+if (isset($_SESSION['err'])) {
+    echo '<div class="alert alert-danger alert-dismissible">
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <strong>Erro:</strong> ' . htmlspecialchars($_SESSION['err']) . '
+          </div>';
+    unset($_SESSION['err']);
+}
+
+if (isset($_SESSION['info'])) {
+    echo '<div class="alert alert-success alert-dismissible">
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <strong>Sucesso:</strong> ' . htmlspecialchars($_SESSION['info']) . '
+          </div>';
+    unset($_SESSION['info']);
+}
+?>
+
+<div class="card shadow-sm p-4" style="background:#C5C6D0;border:none;">
+<div class="card-body">
+
+<h1 class="text-center mb-4">Adicionar Alunos</h1>
+
+<form action="load_criar_perfil.php" method="POST">
+
+    <input type="hidden" name="enc_educacao" value="<?php echo htmlspecialchars($enc_id); ?>">
+
+    <div class="row">
+
+        <div class="form-group col-md-6" style="padding-top:20px;">
+            <label for="nome" class="form-label">Nome completo *</label>
+            <input type="text" class="form-control" id="nome" name="nome" 
+                   placeholder="Ex: João Silva" required>
+            <small class="form-text text-muted">Nome completo do aluno</small>
+        </div>
+
+        <div class="form-group col-md-6" style="padding-top:20px;">
+            <label for="data_nascimento" class="form-label">Data de nascimento *</label>
+            <input type="date" class="form-control" id="data_nascimento" name="data_nascimento"
+                   max="<?php echo date('Y-m-d'); ?>" required>
+            <small class="form-text text-muted">O aluno deve de ter no máximo 16 anos</small>
+        </div>
+
+    </div>
+
+    <div style="text-align:right;margin-top:5vh;">
+        <a href="gerir_criancas.php" class="btn btn-secondary me-2">
+            Cancelar
+        </a>
+        <button type="submit" class="btn btn-success fw-bold">
+            Adicionar Aluno
+        </button>
+    </div>
+
+</form>
+
+</div>
+</div>
+
+</div>
+
+<?php include './rodape.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js_check.js"></script>
+</body>
+</html>
