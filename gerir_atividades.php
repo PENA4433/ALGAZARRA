@@ -2,7 +2,14 @@
 session_start();
 include './basedados.h';
 
-if (!isset($_SESSION['id_user']) || $_SESSION['nivel'] != 1) {
+if (!isset($_SESSION['id_user'], $_SESSION['nivel'])) {
+    include './erro.php';
+    exit;
+}
+
+$nivel = (int) $_SESSION['nivel'];
+
+if ($nivel != 1 && $nivel != 3) {
     include './erro.php';
     exit;
 }
@@ -121,7 +128,8 @@ if (!$atividades) {
                 </li>
 
                 <?php
-                if (isset($_SESSION['id_user']) && $_SESSION['nivel'] == 1) {
+                // Admin
+                if (isset($_SESSION['id_user'], $_SESSION['nivel']) && $_SESSION['nivel'] == 1) {
                     echo '<li class="nav-item dropdown">';
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">';
@@ -133,11 +141,23 @@ if (!$atividades) {
                     echo '</li>';
                 }
 
-                if (isset($_SESSION['id_user']) && $_SESSION['nivel'] == 2) {
+                // Encarregado
+                if (isset($_SESSION['id_user'], $_SESSION['nivel']) && $_SESSION['nivel'] == 2) {
                     echo '<li class="nav-item dropdown">';
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPai" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownPai">';
                     echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Crianças</a></li>';
+                    echo '</ul>';
+                    echo '</li>';
+                }
+
+                // Professor
+                if (isset($_SESSION['id_user'], $_SESSION['nivel']) && $_SESSION['nivel'] == 3) {
+                    echo '<li class="nav-item dropdown">';
+                    echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfessor" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
+                    echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownProfessor">';
+                    echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Crianças</a></li>';
+                    echo '<li><a class="dropdown-item" href="gerir_atividades.php">Gerir atividades</a></li>';
                     echo '</ul>';
                     echo '</li>';
                 }
@@ -147,19 +167,12 @@ if (!$atividades) {
 
             <ul class="navbar-nav ms-auto">
                 <?php
-                if (isset($_SESSION['id_user']) && isset($_SESSION['nivel'])) {
+                if (isset($_SESSION['id_user'], $_SESSION['nivel'])) {
                     echo '<li class="nav-item"><a class="nav-link" href="logout.php">Sair</a></li>';
-                }
-
-                echo '<li class="nav-item">';
-
-                if (isset($_SESSION['id_user']) && isset($_SESSION['nivel'])) {
-                    echo '<a class="nav-link" href="dados.php">Dados pessoais</a>';
+                    echo '<li class="nav-item"><a class="nav-link" href="dados.php">Dados pessoais</a></li>';
                 } else {
-                    echo '<a class="nav-link" href="login.php">Login</a>';
+                    echo '<li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>';
                 }
-
-                echo '</li>';
                 ?>
             </ul>
 
@@ -192,10 +205,6 @@ if (!$atividades) {
         <?php
         $id_atividade = (int) $atividade['id'];
 
-        /*
-         * Esta query usa GROUP BY para impedir que o mesmo aluno apareça várias vezes
-         * caso existam inscrições duplicadas na tabela inscricao.
-         */
         $stmtInscricoes = $conn->prepare("
             SELECT 
                 i.aluno,
@@ -222,7 +231,7 @@ if (!$atividades) {
 
         <div class="row mb-2">
 
-            <div class="col-9">
+            <div class="<?php echo ($nivel == 1) ? 'col-9' : 'col-12'; ?>">
                 <h4>
                     <?php echo htmlspecialchars($atividade['titulo']); ?> -
                     De <?php echo date('d/m/Y', strtotime($atividade['data_inicio'])); ?>
@@ -230,20 +239,22 @@ if (!$atividades) {
                 </h4>
             </div>
 
-            <div class="col-3 text-end">
+            <?php if ($nivel == 1) { ?>
+                <div class="col-3 text-end">
 
-                <a class="btn btn-sm btn-primary"
-                   href="editar_atividade.php?id=<?php echo htmlspecialchars($id_atividade); ?>">
-                    Alterar
-                </a>
+                    <a class="btn btn-sm btn-primary"
+                       href="editar_atividade.php?id=<?php echo htmlspecialchars($id_atividade); ?>">
+                        Alterar
+                    </a>
 
-                <a class="btn btn-sm btn-danger"
-                   href="apagar_atividade.php?id=<?php echo htmlspecialchars($id_atividade); ?>"
-                   onclick="return confirm('Tens a certeza?')">
-                    Apagar
-                </a>
+                    <a class="btn btn-sm btn-danger"
+                       href="apagar_atividade.php?id=<?php echo htmlspecialchars($id_atividade); ?>"
+                       onclick="return confirm('Tens a certeza?')">
+                        Apagar
+                    </a>
 
-            </div>
+                </div>
+            <?php } ?>
 
         </div>
 
@@ -254,7 +265,7 @@ if (!$atividades) {
                     <th style="background:#00d0ff;">Aluno</th>
                     <th style="background:#00d0ff;">Encarregado</th>
                     <th style="background:#00d0ff;">Contacto</th>
-                    <th style="background:#00d0ff;"></th>
+                    <th style="background:#00d0ff;">Presenças</th>
                 </tr>
             </thead>
 
@@ -272,7 +283,7 @@ if (!$atividades) {
                         <td><?php echo htmlspecialchars($row['telemovel']); ?></td>
 
                         <td>
-                            <a class="text-danger fw-bold"
+                            <a class="btn btn-warning btn-sm"
                                href="marcar_presencas.php?aluno=<?php echo htmlspecialchars($row['aluno']); ?>&atividade=<?php echo htmlspecialchars($id_atividade); ?>">
                                 Marcar presenças
                             </a>

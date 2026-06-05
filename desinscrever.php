@@ -21,6 +21,10 @@ if (isset($_GET['id']) && ctype_digit($_GET['id'])) {
 
 $voltar = isset($_GET['voltar']) ? $_GET['voltar'] : 'gerir_criancas.php';
 
+if (isset($_POST['voltar'])) {
+    $voltar = $_POST['voltar'];
+}
+
 function redirecionarComErro($mensagem, $destino) {
     $_SESSION['err'] = $mensagem;
     header("Location: $destino");
@@ -34,8 +38,8 @@ function redirecionarComInfo($mensagem, $destino) {
 }
 
 /*
- * Os professores podem desinscrever qualquer criança.
- * Os encarregados de educação só podem desinscrever crianças associadas ao seu próprio perfil.
+ * Admin e professor podem desinscrever qualquer criança.
+ * Encarregados só podem desinscrever crianças associadas ao seu perfil.
  */
 if ($nivel == 2) {
 
@@ -79,7 +83,7 @@ if ($nivel == 2) {
 
     $aluno_atual = mysqli_fetch_assoc($res_aluno);
 
-} elseif ($nivel == 1) {
+} elseif ($nivel == 1 || $nivel == 3) {
 
     $stmt_aluno = mysqli_prepare($conn, "
         SELECT id, nome 
@@ -128,7 +132,7 @@ if (isset($_POST['id_atividade']) && ctype_digit($_POST['id_atividade'])) {
         );
     }
 
-    /* apagar todos os registos dessa criança nessa atividade */
+    /* remover inscrição */
     $stmt_delete = mysqli_prepare($conn, "
         DELETE FROM inscricao 
         WHERE aluno = ? 
@@ -147,7 +151,10 @@ if (isset($_POST['id_atividade']) && ctype_digit($_POST['id_atividade'])) {
 
     mysqli_stmt_close($stmt_delete);
 
-    redirecionarComInfo('Criança desinscrita com sucesso.', "desinscrever.php?id=$id_crianca&voltar=" . urlencode($voltar));
+    redirecionarComInfo(
+        'Criança desinscrita com sucesso.',
+        "desinscrever.php?id=$id_crianca&voltar=" . urlencode($voltar)
+    );
 
 } elseif (isset($_POST['id_atividade'])) {
     redirecionarComErro(
@@ -156,7 +163,7 @@ if (isset($_POST['id_atividade']) && ctype_digit($_POST['id_atividade'])) {
     );
 }
 
-/* listar apenas atividades onde a criança está inscrita */
+/* listar apenas atividades em que a criança está inscrita */
 $stmt_atividades = mysqli_prepare($conn, "
     SELECT DISTINCT a.id, a.titulo, a.data_inicio, a.data_fim
     FROM atividade a
@@ -221,6 +228,9 @@ mysqli_stmt_close($stmt_atividades);
 
                     <input type="hidden" name="id_atividade"
                            value="<?php echo htmlspecialchars($atividade['id']); ?>">
+
+                    <input type="hidden" name="voltar"
+                           value="<?php echo htmlspecialchars($voltar); ?>">
 
                     <button type="submit" class="btn btn-danger btn-sm">
                         Desinscrever desta atividade

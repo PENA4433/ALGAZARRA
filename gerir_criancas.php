@@ -59,7 +59,7 @@ if ($nivel == 2) {
 }
 
 // QUERY PRINCIPAL
-if ($nivel == 1) {
+if ($nivel == 1 || $nivel == 3) {
 
     if ($filtro_nome !== '') {
 
@@ -134,7 +134,7 @@ if (!$result) {
 }
 
 // CONTAR TOTAL
-if ($nivel == 1) {
+if ($nivel == 1 || $nivel == 3) {
 
     if ($filtro_nome !== '') {
 
@@ -237,7 +237,8 @@ $totalPaginas = ceil($total / $limite);
                 </li>
 
                 <?php
-                if (isset($_SESSION['id_user']) && $_SESSION['nivel'] == 1) {
+                // Administrador
+                if (isset($_SESSION['id_user'], $_SESSION['nivel']) && $_SESSION['nivel'] == 1) {
                     echo '<li class="nav-item dropdown">';
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">';
@@ -249,12 +250,24 @@ $totalPaginas = ceil($total / $limite);
                     echo '</li>';
                 }
 
-                if (isset($_SESSION['id_user']) && $_SESSION['nivel'] == 2) {
+                // Encarregado
+                if (isset($_SESSION['id_user'], $_SESSION['nivel']) && $_SESSION['nivel'] == 2) {
                     echo '<li class="nav-item dropdown">';
                     echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPai" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
                     echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownPai">';
                     echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Crianças</a></li>';
                     echo '<li><a class="dropdown-item" href="criar_perfil.php">Inscrever criança</a></li>';
+                    echo '</ul>';
+                    echo '</li>';
+                }
+
+                // Professor
+                if (isset($_SESSION['id_user'], $_SESSION['nivel']) && $_SESSION['nivel'] == 3) {
+                    echo '<li class="nav-item dropdown">';
+                    echo '<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfessor" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestão</a>';
+                    echo '<ul class="dropdown-menu" aria-labelledby="navbarDropdownProfessor">';
+                    echo '<li><a class="dropdown-item" href="gerir_criancas.php">Gerir Crianças</a></li>';
+                    echo '<li><a class="dropdown-item" href="gerir_atividades.php">Gerir atividades</a></li>';
                     echo '</ul>';
                     echo '</li>';
                 }
@@ -264,19 +277,12 @@ $totalPaginas = ceil($total / $limite);
 
             <ul class="navbar-nav ms-auto">
                 <?php
-                if (isset($_SESSION['id_user']) && isset($_SESSION['nivel'])) {
+                if (isset($_SESSION['id_user'], $_SESSION['nivel'])) {
                     echo '<li class="nav-item"><a class="nav-link" href="logout.php">Sair</a></li>';
-                }
-
-                echo '<li class="nav-item">';
-
-                if (isset($_SESSION['id_user']) && isset($_SESSION['nivel'])) {
-                    echo '<a class="nav-link" href="dados.php">Dados pessoais</a>';
+                    echo '<li class="nav-item"><a class="nav-link" href="dados.php">Dados pessoais</a></li>';
                 } else {
-                    echo '<a class="nav-link" href="login.php">Login</a>';
+                    echo '<li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>';
                 }
-
-                echo '</li>';
                 ?>
             </ul>
 
@@ -312,7 +318,7 @@ $totalPaginas = ceil($total / $limite);
             <th>Nome</th>
             <th>Data nascimento</th>
 
-            <?php if ($nivel == 1) { ?>
+            <?php if ($nivel == 1 || $nivel == 3) { ?>
                 <th>Encarregado</th>
             <?php } ?>
 
@@ -332,7 +338,7 @@ $totalPaginas = ceil($total / $limite);
                     <?php echo date('d/m/Y', strtotime($aluno['data_nascimento'])); ?>
                 </td>
 
-                <?php if ($nivel == 1) { ?>
+                <?php if ($nivel == 1 || $nivel == 3) { ?>
                     <td><?php echo htmlspecialchars($aluno['enc_nome']); ?></td>
                 <?php } ?>
 

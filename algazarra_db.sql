@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS professor (
 ) ENGINE=InnoDB;
 
 INSERT INTO professor VALUES
-(1,'professor','prof@algazarra.pt','21232f297a57a5a743894a0e4a801fc3');
+(1,'professor','professor@algazarra.pt','3f9cd3c7b11eb1bae99dddb3d05da3c5');
 
 -- ========================
 -- TABELA: atividade
@@ -142,6 +142,9 @@ INSERT INTO inscricao VALUES
 
 -- ========================
 -- TABELA: utilizador
+-- nível 1 = admin
+-- nível 2 = encarregado
+-- nível 3 = professor
 -- ========================
 CREATE TABLE IF NOT EXISTS utilizador (
   id int(11) NOT NULL AUTO_INCREMENT,
@@ -157,13 +160,22 @@ CREATE TABLE IF NOT EXISTS utilizador (
 
 INSERT INTO utilizador (user, nome, data_nascimento, telemovel, email, pwd, nivel) VALUES
 (
-  'professor',
-  'Professor Algazarra',
+  'admin',
+  'admin',
   '1980-01-01',
   '910000000',
-  'professor@algazarra.pt',
+  'admin@algazarra.pt',
   '21232f297a57a5a743894a0e4a801fc3',
   1
+),
+(
+  'professor',
+  'Professor Algazarra',
+  '1985-02-15',
+  '911111111',
+  'professor@algazarra.pt',
+  '3f9cd3c7b11eb1bae99dddb3d05da3c5',
+  3
 ),
 (
   'encarregado1',
